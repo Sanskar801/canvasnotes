@@ -20,7 +20,7 @@ export default function Hero() {
                 <p className="text-lg text-gray-600">
                     Make notes in your own style with total freedom.
                 </p>
-                <Button text="Get Started" onClick={() => navigate("/auth")} />
+                <Button text="Get Started" onClick={() => navigate("/canvas")} />
             </div>
         </div>
     );

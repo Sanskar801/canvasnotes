@@ -1,13 +1,29 @@
-from fastapi import FastAPI, Form
-from pydantic import BaseModel
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
-app = FastAPI()
+from db.database import engine
+from db.models import Base
+from routes.canvas_routes import router as canvas_router
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Create all tables on startup (dev convenience — use Alembic for prod)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    yield
+
+
+app = FastAPI(title="CanvasNotes API", version="0.1.0", lifespan=lifespan)
+
+# CORS — allow the Vite dev server
 origins = [
     "http://localhost:3000",
     "http://localhost:5173",
+    "http://localhost:5174",
+    "http://localhost:5175"
 ]
 
 app.add_middleware(
@@ -18,22 +34,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Mount canvas routes
+app.include_router(canvas_router)
 
-db = {}
 
 @app.get("/")
 async def root():
-    return {"message": "Hello World"}
-
-
-class Auth(BaseModel):
-    username: str
-    email: str
-@app.post("/auth")
-async def auth(data: Auth):
-    if data.username in db:
-        return {"username": data.username, "email": db[data.username]["email"]}
-    else:
-        db[data.username] = {"email": data.email}
-        return {"username": data.username, "email": data.email}
-
+    return {"message": "CanvasNotes API is running"}
